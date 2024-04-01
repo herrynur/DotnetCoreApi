@@ -1,0 +1,25 @@
+@BackendService_HostAddress = http://localhost:7000
+
+GET {{BackendService_HostAddress}}/companies/
+Accept: application/json
+
+###
+
+POST {{BackendService_HostAddress}}/login
+Content-Type: application/json
+
+{
+  "Username": "admin",
+  "Password": "P@ssw0rd"
+}
+
+###
+
+GET {{BackendService_HostAddress}}/companies
+Accept: application/json
+Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNkZjc2ZGY4LWQxNWMtNGEwYi05Yzc3LWVjNTBkZWFkOGRhYyIsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQWRtaW4iLCJuYmYiOjE3MTA5MTk3OTQsImV4cCI6MTcxMTUyNDU5NCwiaWF0IjoxNzEwOTE5Nzk0LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjcwMDAifQ.XBUFnBDPlO--q0mqXL4xNeJr59Ei3nio1F6ejErcVIw
+###
+
+GET {{BackendService_HostAddress}}/cities
+Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNkZjc2ZGY4LWQxNWMtNGEwYi05Yzc3LWVjNTBkZWFkOGRhYyIsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQWRtaW4iLCJuYmYiOjE3MTA5MTk3OTQsImV4cCI6MTcxMTUyNDU5NCwiaWF0IjoxNzEwOTE5Nzk0LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjcwMDAifQ.XBUFnBDPlO--q0mqXL4xNeJr59Ei3nio1F6ejErcVIw
+###

@@ -1,0 +1,88 @@
+include:
+- remote: 'https://gitlab.com/taufikdev88/gitlab-ci-template/-/raw/main/build-docker.yml'
+
+.build-docker:
+  extends: .build
+  tags:
+  - docker
+  before_script:
+  - docker pull mcr.microsoft.com/dotnet/aspnet:8.0
+  - docker pull mcr.microsoft.com/dotnet/sdk:8.0
+
+.deploy-teleport:
+  stage: deploy
+  image: registry.tog.co.id/mtk/teleport
+  id_tokens:
+    TBOT_GITLAB_JWT:
+      aud: $TELEPORT_ID_TOKEN
+  environment: $PROJECT_ENVIRONMENT
+  script:
+    - ssh $SERVER_HOST "cd $SERVER_DIR && docker compose pull && docker compose up --force-recreate -d"
+
+# development environment
+build-develop-backend:
+  extends: .build-docker
+  rules:
+  - if: $CI_COMMIT_BRANCH == "develop"
+    changes: 
+    - BackendService/**/*
+  variables:
+    PROJECT_ENVIRONMENT: development
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/BackendService/Dockerfile
+    DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE/backendservice
+
+deploy-develop:
+  extends: .deploy-teleport
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: manual
+  variables:
+    PROJECT_ENVIRONMENT: development
+    SERVER_HOST: $DEV_SERVER
+    SERVER_DIR: $DEV_DIR
+
+# staging environment
+build-staging-backend:
+  extends: .build-docker
+  rules:
+  - if: $CI_COMMIT_BRANCH =~ /^hotfix.*$/ || $CI_COMMIT_BRANCH =~ /^release.*$/
+    changes: 
+    - BackendService/**/*
+  variables:
+    PROJECT_ENVIRONMENT: staging
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/BackendService/Dockerfile
+    DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE/backendservice:staging
+
+deploy-staging:
+  extends: .deploy-teleport
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^hotfix.*$/ || $CI_COMMIT_BRANCH =~ /^release.*$/
+      when: manual
+  variables:
+    PROJECT_ENVIRONMENT: staging
+    SERVER_HOST: $STG_SERVER
+    SERVER_DIR: $STG_DIR
+
+# production environment
+build-main-backend:
+  extends: .build-docker
+  rules:
+  - if: $CI_COMMIT_TAG
+  variables:
+    PROJECT_ENVIRONMENT: production
+    PROJECT_VERSION: $CI_COMMIT_TAG
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/BackendService/Dockerfile
+    DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE/backendservice:$CI_COMMIT_TAG
+
+release-main:
+  stage: .post
+  image: registry.gitlab.com/gitlab-org/release-cli
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "running release_job for $CI_COMMIT_TAG"
+  release:
+    name: 'Release $CI_COMMIT_TAG'
+    description: 'Created using the release-cli'
+    tag_name: $CI_COMMIT_TAG
+    ref: '$CI_COMMIT_SHA'
